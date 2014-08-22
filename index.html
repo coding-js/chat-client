@@ -1,0 +1,8 @@
+<script src="http://localhost:3030/socket.io/socket.io.js"></script>
+<script>
+  var socket = io("http://localhost:3030");
+  socket.emit('subscribe', 'james');
+  socket.on('message', function(data) {
+    console.log(data);
+  });
+</script>
