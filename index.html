@@ -1,8 +1,125 @@
-<script src="http://localhost:3030/socket.io/socket.io.js"></script>
-<script>
-  var socket = io("http://localhost:3030");
-  socket.emit('subscribe', 'james');
-  socket.on('message', function(data) {
-    console.log(data);
-  });
-</script>
+<!doctype html>
+<html ng-app="chatClientApp">
+<head>
+  <link rel="stylesheet" href="bower_components/foundation/css/normalize.css" />
+  <link rel="stylesheet" href="bower_components/foundation/css/foundation.css" />
+  <style>
+    #sign-in form {
+      text-align: center;
+    }
+
+    #sign-in form > div {
+       width: 400px;
+    }
+
+    h1 {
+      margin: 100px 0 50px 0;
+      text-align: center;
+    }
+
+    #chat-window {
+      position: absolute;
+      left: 50%;
+      margin-left: -300px;
+      width: 600px;
+    }
+
+    #chat-messages {
+      padding: 20px;
+      border: 1px solid #ccc;
+      margin: 0 0 10px 0;      
+      height: 400px;
+      overflow: auto;
+    }
+
+    #chat-messages li {
+      list-style: none;
+      font-size: 14px;
+      color: #555;
+    }
+
+    #chat-messages li.message {
+      display: block;
+      padding: 0;
+      margin: 0;
+    }
+
+    #chat-messages li.outgoing {
+      /*float: right;*/
+    }
+
+    .ng-cloak {
+      display: none;
+    }
+  </style>
+</head>
+<body ng-controller="ChatCtrl">
+  <section id="sign-in" ng-hide="name">
+    <form>
+      <h1 style="">What's your name?</h1>
+      <div class="row collapse">
+        <div class="small-9 columns">
+          <input type="text" placeholder="Type your name" ng-model="nameInput">
+        </div>
+        <div class="small-3 columns">
+          <input type="submit" class="button postfix" value="Sign In" ng-click="signIn()">
+        </div>
+      </div>
+    </form>
+  </section>
+  <section id="chat-window" class="ng-cloak" ng-show="name">
+    <h1>Waddup, {{name}}?</h1>
+    <ul id="chat-messages">
+      <li ng-repeat="message in messages" 
+        data-alert class="message" ng-class="{outgoing: message.from == name}">
+        <strong>{{message.from}}</strong> : {{message.text}}
+      </li>
+    </ul>
+    <form id="send-message" ng-submit="sendMessage()">
+      <div class="row collapse">
+        <div class="small-9 columns">
+          <input type="text" ng-model="messageInput" placeholder="Enter a message">
+        </div>
+        <div class="small-3 columns">
+          <input type="submit" class="button postfix" value="Send">
+        </div>
+      </div>
+    </form>
+  </section>
+
+  <script src="bower_components/angular/angular.js"></script>
+  <script src="http://localhost:3030/socket.io/socket.io.js"></script>
+  <script>
+
+    var chatClientApp = angular.module('chatClientApp', []);
+    chatClientApp.controller('ChatCtrl', function($scope) {
+      var socket = io("http://localhost:3030");
+      $scope.messages = [];
+      
+      var handleIncomingMessage = function(message) {
+        $scope.messages.push(message);
+        $scope.$apply();
+      };
+
+      $scope.signIn = function() {
+        if (!!$scope.nameInput) {
+          $scope.name = $scope.nameInput;
+          socket.on('message', handleIncomingMessage);
+          socket.emit('subscribe', $scope.name);
+        }
+      };
+
+      $scope.sendMessage = function() {
+        if (!!$scope.messageInput) {
+          var message = {
+            from: $scope.name,
+            text: $scope.messageInput
+          };
+          socket.emit('message', message);
+          $scope.messageInput = "";
+        }
+      };
+    });    
+  </script>
+</body>
+</html>
