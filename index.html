@@ -68,7 +68,10 @@
     </form>
   </section>
   <section id="chat-window" class="ng-cloak" ng-show="name">
-    <h1>Waddup, {{name}}?</h1>
+    <h1>{{currentRoom}}</h1>
+    <select ng-change="joinRoom()" ng-model="roomSelect">
+      <option ng-repeat="room in rooms">{{room}}</option>
+    </select>
     <ul id="chat-messages">
       <li ng-repeat="message in messages" 
         data-alert class="message" ng-class="{outgoing: message.from == name}">
@@ -101,10 +104,25 @@
         $scope.$apply();
       };
 
+      $scope.joinRoom = function() {
+        $scope.messages = [];
+        socket.emit('join', {
+          room: $scope.roomSelect
+        });
+      };
+
+      var configureRooms = function(rooms) {
+        $scope.rooms = rooms;
+        $scope.roomSelect = rooms[0];
+        $scope.joinRoom();
+        $scope.$apply();
+      };
+
       $scope.signIn = function() {
         if (!!$scope.nameInput) {
           $scope.name = $scope.nameInput;
           socket.on('message', handleIncomingMessage);
+          socket.on('rooms', configureRooms);
           socket.emit('subscribe', $scope.name);
         }
       };
