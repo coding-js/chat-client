@@ -1,0 +1,156 @@
+<!doctype html>
+<html ng-app="chatClientApp">
+<head>
+  <link rel="stylesheet" href="bower_components/foundation/css/normalize.css" />
+  <link rel="stylesheet" href="bower_components/foundation/css/foundation.css" />
+  <style>
+    #sign-in form {
+      text-align: center;
+    }
+
+    #sign-in form > div {
+       width: 400px;
+    }
+
+    h1 {
+      margin: 30px 0;
+      text-align: center;
+    }
+
+    #chat-window {
+      position: absolute;
+      left: 50%;
+      margin-left: -300px;
+      width: 600px;
+    }
+
+    #chat-messages {
+      padding: 20px;
+      border: 1px solid #ccc;
+      margin: 0 0 10px 0;      
+      height: 350px;
+      overflow: auto;
+    }
+
+    #chat-messages li {
+      list-style: none;
+      font-size: 14px;
+      color: #555;
+    }
+
+    #chat-messages li.message {
+      display: block;
+      padding: 0;
+      margin: 0;
+    }
+
+    #chat-messages li.outgoing {
+      /*float: right;*/
+    }
+
+    .ng-cloak {
+      display: none;
+    }
+  </style>
+</head>
+<body ng-controller="ChatCtrl">
+  <section id="sign-in" ng-hide="name">
+    <h1>Sign In</h1>
+    <form>      
+      <p><label>Select a server port:</label></p>
+      <div class="row collapse">
+        <div class="small-12 columns">
+          <select ng-model="port" ng-init="port=3030">
+            <option>3030</option>
+            <option>3031</option>
+            <option>3032</option>
+            <option>3034</option>
+          </select>
+        </div>
+      </div>
+      <p><label>And sign in!</label></p>
+      <div class="row collapse">
+        <div class="small-9 columns">
+          <input type="text" placeholder="Type your name" ng-model="nameInput">
+        </div>
+        <div class="small-3 columns">
+          <input type="submit" class="button postfix" value="Sign In" ng-click="signIn()">
+        </div>
+      </div>
+    </form>
+  </section>
+  <section id="chat-window" class="ng-cloak" ng-show="name">
+    <h1>localhost:{{port}}</h1>
+    <select ng-change="joinRoom()" ng-model="roomSelect">
+      <option ng-repeat="room in rooms">{{room}}</option>
+    </select>
+    <ul id="chat-messages">
+      <li ng-repeat="message in messages" 
+        data-alert class="message" ng-class="{outgoing: message.from == name}">
+        <strong>{{message.from}}</strong> : {{message.text}}
+      </li>
+    </ul>
+    <form id="send-message" ng-submit="sendMessage()">
+      <div class="row collapse">
+        <div class="small-9 columns">
+          <input type="text" ng-model="messageInput" placeholder="Enter a message">
+        </div>
+        <div class="small-3 columns">
+          <input type="submit" class="button postfix" value="Send">
+        </div>
+      </div>
+    </form>
+  </section>
+
+  <script src="bower_components/angular/angular.js"></script>
+  <script src="socket.io.js"></script>
+  <script>
+
+    var chatClientApp = angular.module('chatClientApp', []);
+    chatClientApp.controller('ChatCtrl', function($scope) {
+      var socket;
+      $scope.messages = [];
+      
+      var handleIncomingMessage = function(message) {
+        $scope.messages.push(message);
+        $scope.$apply();
+      };
+
+      $scope.joinRoom = function() {
+        $scope.messages = [];
+        socket.emit('join', {
+          room: $scope.roomSelect
+        });
+      };
+
+      var configureRooms = function(rooms) {
+        $scope.rooms = rooms;
+        $scope.roomSelect = rooms[0];
+        $scope.joinRoom();
+        $scope.$apply();
+      };
+
+      $scope.signIn = function() {
+        if (!!$scope.nameInput) {
+          socket = io("http://localhost:" + $scope.port);
+          $scope.name = $scope.nameInput;
+          socket.on('message', handleIncomingMessage);
+          socket.on('rooms', configureRooms);
+          socket.emit('subscribe', $scope.name);
+        }
+      };
+
+      $scope.sendMessage = function() {
+        if (!!$scope.messageInput) {
+          var message = {
+            from: $scope.name,
+            text: $scope.messageInput
+          };
+          socket.emit('message', message);
+          $scope.messageInput = "";
+        }
+      };
+    });    
+  </script>
+</body>
+</html>

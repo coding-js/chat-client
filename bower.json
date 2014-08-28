@@ -1,0 +1,20 @@
+{
+  "name": "chat-client",
+  "version": "0.0.0",
+  "homepage": "https://github.com/coding-js/chat-client",
+  "authors": [
+    "James Blashill <james@blashill.com>"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "foundation": "~5.4.0",
+    "angular": "~1.2.23"
+  }
+}
